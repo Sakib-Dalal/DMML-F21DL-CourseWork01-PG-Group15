@@ -609,6 +609,7 @@ A. Paszke \emph{et al.}, ``PyTorch: An imperative style, high-performance deep l
 % ---------------------------------------------------------------------
 % APPENDICES
 % ---------------------------------------------------------------------
+\onecolumn
 \section*{Appendix A: Configurations and the grids behind them}
 
 Every grid was searched on a validation slice of the training rows, never on the test rows. The tabular grid covered six tree depths from three to twenty, four minimum leaf sizes, four forest sizes,
@@ -620,7 +621,7 @@ in Table~\ref{tab:cfg} was fixed before training, so the four networks differ by
 tabular work used scikit-learn \cite{pedregosa2011scikit} and all image work used PyTorch
 \cite{paszke2019pytorch}.
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Configuration of the twelve models; the two clusterers share a row, as do the three pretrained
 networks.}
@@ -642,10 +643,11 @@ Custom CNN & 5 conv blocks 32/64/128/256/256 ($3\times3$, BN, max-pool), dense 2
 Pretrained CNNs & EfficientNet-B0, ResNet-18, MobileNetV3-Small; ImageNet weights, linear head replaced, all layers fine-tuned, Adam $5\times10^{-4}$, batch 64, 8 epochs \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 % ---------------------------------------------------------------------
 \needspace{6\baselineskip}
+\clearpage
 \section*{Appendix B: Full image metrics and the source split}
 
 Table~\ref{tab:full} completes Table~\ref{tab:img} with the metrics omitted there for space. Balanced accuracy
@@ -653,7 +655,7 @@ is not repeated because it equals accuracy on a 50/50 test set. Precision is for
 specificity its complement on the legitimate class; false positive and false negative rates are their
 complements and are therefore omitted too.
 
-\begin{table*}[!t]
+\begin{table}[!t]
 \centering
 \caption{Full metric set for the screenshot models ($n=2{,}400$).}
 \label{tab:full}
@@ -669,7 +671,7 @@ ResNet-18         & 0.9512 & 0.7606 & 1009 & 1101 & 26.5\,ms \\
 MobileNetV3-Small & 0.9385 & 0.7511 & 1018 & 1082 & 26.9\,ms \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 The errors also split unevenly by source, which is why we report it: 182 of 1{,}850 Phishpedia images were
 misclassified (9.8~\%) against 76 of 550 Zenodo images (13.8~\%), so the Zenodo fraction of the corpus is
@@ -677,6 +679,7 @@ materially harder for a network trained on the mix.
 
 % ---------------------------------------------------------------------
 \needspace{6\baselineskip}
+\clearpage
 \section*{Appendix C: Contribution of each member}
 
 The requirement each member owned is recorded in the notebook's own header; the specific work below is taken
@@ -684,7 +687,7 @@ from the repository's commit history, which records who wrote which part of each
 
 Table~\ref{tab:contrib} records the allocation.
 
-\begin{table*}[h]
+\begin{table}[h]
 \centering
 \caption{Individual contributions.}
 \label{tab:contrib}
@@ -721,10 +724,11 @@ deduplication audit, the visual exploratory analysis, the custom CNN, the benchm
 three transfer models, and the diagnostic and explainability figures. \\
 \bottomrule
 \end{tabular}
-\end{table*}
+\end{table}
 
 % ---------------------------------------------------------------------
 \needspace{6\baselineskip}
+\clearpage
 \section*{Appendix D: Cleaning record, licences and use of generative AI}
 
 \textbf{Tabular file.} 235{,}795 rows; 425 duplicate addresses removed; no missing values and no constant
@@ -737,12 +741,54 @@ removed as undecodable, single-colour or duplicate (hash of a $64\times64$ RGB t
 (50{,}945 legitimate, 10{,}430 phishing). Balanced to 8{,}000 per class, then split 11{,}200 / 2{,}400 /
 2{,}400 at $224\times224$ RGB, scaled to $[0,1]$.
 
-\textbf{Licences.} PhiUSIIL is CC BY 4.0 (UCI repository ID 967). The screenshots come from Zenodo,
-\emph{Phishing and Legitimate Websites Dataset}, version 2.0, DOI 10.5281/zenodo.23477065, CC BY 4.0, grouped
-under the concept DOI 10.5281/zenodo.21379701; CC BY 4.0 requires attribution and a link to the licence, so
-both are credited in the bibliography. The Phishpedia benchmark is licensed for research use only: it is not
-redistributed and not used commercially. The image corpus is deliberately excluded from version control. Only
-derived aggregates, figures and metric tables appear here.
+\textbf{Licences and the conditions attached to them.} Two of the three sources are CC BY 4.0
+\url{https://creativecommons.org/licenses/by/4.0/}, which permits commercial and non-commercial reuse on three
+conditions: attribution, a link to the licence, and an indication of whether changes were made. All three are met
+for every source. PhiUSIIL is the dataset of Prasad and Chandra \cite{prasad2024phiusiil}, distributed by the UCI
+Machine Learning Repository under ID 967
+(\url{https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset}). The screenshots come from version 2.0
+of the Zenodo record \emph{Phishing and Legitimate Websites Dataset}
+(\url{https://doi.org/10.5281/zenodo.23477065}), grouped under the concept DOI 10.5281/zenodo.21379701. The
+Phishpedia benchmark of Lin \emph{et al.} \cite{lin2021phishpedia} is provider-licensed for research use only, so it
+is neither redistributed nor used commercially, and no derivative of it is published.
+
+\emph{Changes made.} Both CC BY datasets were modified before use, and the modifications are stated because the
+licence requires it. For the tabular file we removed 425 duplicate addresses, dropped four identifier columns,
+dropped all three similarity columns for leakage, label-encoded the top-level domain and selected 17 features. For
+the screenshots we removed undecodable, single-colour and duplicate files, capped each class at 8{,}000 images and
+resized to $224\times224$ RGB. Neither derived dataset is redistributed, and no screenshot from either corpus is
+reproduced in this report, which is also why the visual figures are plots of descriptors rather than sample pages.
+Table~\ref{tab:licence} records the position source by source; only derived aggregates, figures and metric tables
+appear here.
+
+\begin{table}[!t]
+\centering
+\caption{The licence position for each source: what we changed, and how each condition is satisfied.}
+\label{tab:licence}
+\tabfont
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{2.5cm}>{\raggedright\arraybackslash}p{4.6cm}>{\raggedright\arraybackslash}p{5.4cm}@{}}
+\toprule
+\textbf{Source} & \textbf{Licence} & \textbf{What we changed} & \textbf{How the conditions are met} \\
+\midrule
+PhiUSIIL, UCI ID 967 \cite{prasad2024phiusiil} & CC BY 4.0 &
+425 duplicate addresses removed; four identifier columns dropped; three similarity columns dropped for leakage;
+top-level domain label-encoded; 17 features retained. &
+Attributed with a full citation; licence linked; changes stated here; the derived table is not redistributed. \\
+\addlinespace
+Zenodo 23477065, version 2.0 \cite{yadav2026zenodo} & CC BY 4.0 &
+Undecodable, single-colour and duplicate screenshots removed; each class capped at 8{,}000; images resized to
+$224\times224$. &
+Attributed with a full citation; licence linked; changes stated here; the corpus is excluded from version control
+and no screenshot is reproduced. \\
+\addlinespace
+Phishpedia benchmark \cite{lin2021phishpedia} & Custom, research only &
+Same cleaning as above; used for training and evaluation only. &
+Not redistributed, no commercial use, no derivative published, no image reproduced. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 
 \textbf{Use of generative AI.} Following the module's framework statements 4 and 6, we record the assistance we
 used. Generative AI tools were used for code generation and debugging, with prompts recorded in the

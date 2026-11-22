@@ -72,7 +72,7 @@ The two screenshot sources give 91,740 raw images, 61,375 after cleaning.
 | Contribution appendix | Appendix C, taken from the notebook header and the commit history |
 
 Every figure is regenerated from the saved outputs of the two notebooks, so the numbers in the report and
-the numbers in the notebook cannot drift apart. Three figures and seven tables appear; the report keeps
+the numbers in the notebook cannot drift apart. Three figures and eight tables appear; the report keeps
 only the visuals that carry an argument, as the brief asks.
 
 ## Reproducing
