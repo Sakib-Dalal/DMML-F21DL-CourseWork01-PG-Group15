@@ -8,3 +8,11 @@ venv/
 
 Datasets/phiusiil.zip
 Datasets/Phishing dataset/
+Datasets/combined_images/
+*.orig.bak
+Documents/Report/main.aux
+Documents/Report/main.log
+Documents/Report/main.out
+Documents/Report/build.log
+Documents/Report/main.pdf
+*.good.bak
