@@ -10,7 +10,6 @@ F21DL Data Mining and Machine Learning — Group Coursework, Group 15.
 | `Notebook/Phishing_Image_CNN_Pipeline.ipynb` | The screenshot experiments (RQ4 / H4): acquisition, cleaning, four convolutional networks |
 | `Documents/Report/main.tex` | The report, IEEEtran journal class, A4 |
 | `Datasets/PhiUSIIL_Phishing_URL_Dataset.csv` | The tabular dataset, committed because it is 57 MB |
-| `Guide/` | The module brief and the dataset licence list |
 
 ## The datasets
 
@@ -91,6 +90,13 @@ Both notebooks are run top to bottom.
   archive once and leave it in the project root, and Step 02 will reuse it.
 - Setting `USE_PHISHPEDIA = False` in Step 02 runs on the Zenodo record alone. The corpus then falls
   to 21,311 images and every figure from Step 04 onward must be regenerated.
+- The Phishpedia archives (`phish_sample_30k.zip`, `benign_sample_30k.zip`) are published by the
+  Phishpedia authors and are read here from a Google Drive folder when one is mounted; no account is
+  required for the study to run, because the fallback above reproduces the pipeline end to end on the
+  Zenodo record alone. Nothing needed to run the notebooks lives only on a private drive.
+
+The module brief and the dataset-licence list are the teaching team's documents and are not redistributed
+here; the report cites them where it relies on them.
 
 ## Notes on reuse
 

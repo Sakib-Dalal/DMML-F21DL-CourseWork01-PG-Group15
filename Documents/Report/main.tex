@@ -16,6 +16,7 @@
 \usepackage[table]{xcolor}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
+\usepackage{xurl} % break long URLs at slashes, never inside a domain
 \usepackage{needspace}
 \usepackage{caption}
 
@@ -741,23 +742,24 @@ removed as undecodable, single-colour or duplicate (hash of a $64\times64$ RGB t
 (50{,}945 legitimate, 10{,}430 phishing). Balanced to 8{,}000 per class, then split 11{,}200 / 2{,}400 /
 2{,}400 at $224\times224$ RGB, scaled to $[0,1]$.
 
-\textbf{Licences and the conditions attached to them.} Two of the three sources are CC BY 4.0
-\url{https://creativecommons.org/licenses/by/4.0/}, which permits commercial and non-commercial reuse on three
-conditions: attribution, a link to the licence, and an indication of whether changes were made. All three are met
-for every source. PhiUSIIL is the dataset of Prasad and Chandra \cite{prasad2024phiusiil}, distributed by the UCI
-Machine Learning Repository under ID 967
-(\url{https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset}). The screenshots come from version 2.0
-of the Zenodo record \emph{Phishing and Legitimate Websites Dataset}
-(\url{https://doi.org/10.5281/zenodo.23477065}), grouped under the concept DOI 10.5281/zenodo.21379701. The
-Phishpedia benchmark of Lin \emph{et al.} \cite{lin2021phishpedia} is provider-licensed for research use only, so it
-is neither redistributed nor used commercially, and no derivative of it is published.
+\textbf{Licences and the conditions attached to them.} Two of the three sources are CC BY 4.0, which permits
+commercial and non-commercial reuse on three conditions: attribution, a link to the licence, and an indication of
+whether changes were made. All three are met for every source; the addresses are listed below.
+
+\noindent Licence (both CC BY 4.0 sources): \url{https://creativecommons.org/licenses/by/4.0/}\\
+PhiUSIIL, UCI Machine Learning Repository ID 967: \href{https://archive.ics.uci.edu/dataset/967/phiusiil+phishing+url+dataset}{archive.ics.uci.edu/dataset/967}\\
+Zenodo record, version 2.0: \url{https://doi.org/10.5281/zenodo.23477065}\\
+
+\noindent PhiUSIIL is the dataset of Prasad and Chandra \cite{prasad2024phiusiil}; the screenshots come from
+version 2.0 of the Zenodo record \emph{Phishing and Legitimate Websites Dataset}, grouped under the concept DOI
+10.5281/zenodo.21379701. The Phishpedia benchmark of Lin \emph{et al.} \cite{lin2021phishpedia} is provider-licensed
+for research use only, so it is neither redistributed nor used commercially, and no derivative of it is published.
 
 \emph{Changes made.} Both CC BY datasets were modified before use, and the modifications are stated because the
 licence requires it. For the tabular file we removed 425 duplicate addresses, dropped four identifier columns,
 dropped all three similarity columns for leakage, label-encoded the top-level domain and selected 17 features. For
 the screenshots we removed undecodable, single-colour and duplicate files, capped each class at 8{,}000 images and
-resized to $224\times224$ RGB. Neither derived dataset is redistributed, and no screenshot from either corpus is
-reproduced in this report, which is also why the visual figures are plots of descriptors rather than sample pages.
+resized to $224\times224$ RGB. Neither derived dataset is redistributed, and no screenshot from either corpus is reproduced here.
 Table~\ref{tab:licence} records the position source by source; only derived aggregates, figures and metric tables
 appear here.
 
