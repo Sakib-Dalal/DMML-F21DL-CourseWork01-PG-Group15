@@ -127,11 +127,11 @@ corpus than about detection.\par}
 \section{Introduction}
 % ---------------------------------------------------------------------
 
-A phishing page is a copy of a login page somebody else owns, put online to collect a password, a card number or a
-one-time code. Page savers and free hosting make a convincing clone an afternoon's work, and it can be used and
-abandoned before a blocklist catches up. Because the page is a copy, the victim is not asked to trust a stranger but
-to log in to a service they already use, which is why phishing endures as one of the most reported forms of
-cybercrime \cite{khonji2013phishing,basit2021comprehensive}.
+A phishing page is a copy of a login page somebody else owns, and it exists to collect a password. Page savers
+and free hosting make a convincing clone an afternoon's work; it can be used and thrown away before a blocklist
+catches up. Because the page is a copy, the victim is never asked to trust a stranger. They are asked to log in to a
+service they already use, which is how the trick keeps working, and why phishing remains one of the most reported
+forms of cybercrime \cite{khonji2013phishing,basit2021comprehensive}.
 
 The problem is three problems, because three teams act on the verdict. A browser vendor needs an answer in the
 time it takes to paint a page, with no GPU available. A security analyst needs to know \emph{why} a page was
@@ -139,17 +139,16 @@ blocked, because an unexplained block gets appealed. A bank needs to know how ma
 false alarm sends a customer into a telephone queue. Accuracy answers none of that, so we report precision,
 recall, latency and cost beside it.
 
-Research has followed the available evidence rather than the problem, in three lines. One reads the address
-string: its length, digits, hyphens and sub-domains
-\cite{sahingoz2019ml,rao2019detection,marchal2014phishstorm}. One reads the page source: links pointing
-off-site, forms posting to third parties, copyright lines \cite{rao2019detection,fette2007learning}. One reads
-the picture, on the argument that an attacker must copy the look of a page and rarely the address
-\cite{lin2021phishpedia}. All three report scores near or above 0.95, which is suspicious: a detector scoring
-0.999 on a random split of a crawled corpus is not necessarily one that scores 0.999 on tomorrow's pages
-\cite{marchal2014phishstorm}. What is missing is not another detector but a comparison: tabular and visual
-evidence are rarely put against each other under one protocol, unsupervised separation is rarely reported, and
-the trade-off between the best score and the most explainable model is usually settled in favour of the
-score.
+Research has followed the available evidence rather than the problem. The address string gives one line: its
+length and digits, the hyphens, the sub-domains
+\cite{sahingoz2019ml,rao2019detection,marchal2014phishstorm}. The page source gives another, counting links that
+point off-site and forms that post to a third party \cite{rao2019detection,fette2007learning}. A third reads the
+picture, on the argument that an attacker must copy the look of a page and rarely the address
+\cite{lin2021phishpedia}. All three report scores near or above 0.95, which is suspicious. A detector scoring 0.999
+on a random split of a crawled corpus is not necessarily one that scores 0.999 on tomorrow's pages
+\cite{marchal2014phishstorm}. The gap is a comparison rather than another detector. Tabular and visual evidence are
+rarely put against each other under one protocol, and unsupervised separation is rarely reported at all. Where the
+best score and the most explainable model disagree, the score usually wins.
 
 \textbf{RQ1: can a model separate phishing from legitimate pages using tabular evidence, and how well?}
 \emph{Hypothesis 1: yes, above 0.95.} We take 0.95 from the published baselines, which report above 0.97 from
@@ -171,7 +170,8 @@ and cluster analysis of mixed binary and count features tends to split on the la
 than on meaning. Our bar is an adjusted Rand index (ARI) of 0.5. It fails if either algorithm clears it.
 
 \textbf{RQ4: can a page be judged from its screenshot alone?} \emph{Hypothesis 4: partly, and worse than the
-table.} A screenshot keeps layout, colour and logos and loses the address, the text and the HTML. Phishpedia
+table.} A screenshot keeps the layout and the colour. It loses the address bar, the text and the HTML that produced
+the page. Phishpedia
 shows pixels carry real signal, but its method matches maintained brand references \cite{lin2021phishpedia}, a
 narrower question than deciding whether a page is honest. It fails if the picture models match the tabular ones.
 
@@ -495,11 +495,11 @@ survey literature \cite{khonji2013phishing,basit2021comprehensive} and in the da
 \cite{prasad2024phiusiil}, and it explains the distance between our numbers and the 0.99-plus figures quoted for this
 file.
 
-\emph{Page evidence beats address evidence, and the mechanism is cost.} RQ2 is answered by three analyses that agree:
-the correlation ranking, the forest's importance and the shape of the tree. An attacker can shorten a URL, add a
+\emph{Page evidence beats address evidence, and the mechanism is cost.} RQ2 is answered three times over, and the answers agree: the correlations, the forest's importances, and the
+shape of the tree. An attacker can shorten a URL, add a
 hyphen or buy HTTPS in minutes, and five of seventeen retained features describe the address while none ranks high.
-They cannot cheaply produce a credible reference count, a copyright line, social links and the right amount of code,
-because that is the output of a real publishing pipeline. Rao and Pais \cite{rao2019detection} argue the same, and
+A credible reference count is harder, and so are a copyright line and a realistic volume of code, because
+those come out of a real publishing pipeline. Rao and Pais \cite{rao2019detection} argue the same, and
 Fette \emph{et al.} \cite{fette2007learning} found the analogous pattern in email. Our tree adds a caveat the
 literature does not stress: its first split counts external references, which an attacker can pad without changing
 what the page does, so the advantage is one of cost rather than a guarantee.
@@ -526,12 +526,12 @@ the screenshot model only where the tabular probability is uncertain.
 \emph{Limitations and future work.} The split is random, so test pages come from the same crawl as training pages; a
 time-based split would lower every score and is the right test of a detector \cite{marchal2014phishstorm}. We removed
 three leaky columns but cannot prove the family is gone, since \texttt{IsHTTPS} and the reference counts are also
-partly the crawler's output. We also fed ImageNet backbones un-normalised inputs with no augmentation, which is consistent with the three models landing within 0.0212 of each other. One run per model means the 0.0212 spread is a
-band, not a ranking; the corpus merges two capture conventions, as the source-stratified errors show; and one tabular
-corpus containing analyst logic cannot tell us whether the 17 features transfer. We would therefore restore ImageNet
-normalisation and add augmentation, replace the random split with a temporal one and report the drop, build the
-late-fusion model the errors point to, calibrate the outputs so a vendor can set a threshold from a stated
-false-alarm budget, and test the 17 features on a second corpus.
+partly the crawler's output. We also fed ImageNet backbones un-normalised inputs with no augmentation, which is consistent with the three models landing within 0.0212 of each other. One run per model means the 0.0212 spread is a band, not a
+ranking. The corpus merges two capture conventions, as the source-stratified errors show. And one tabular corpus
+containing analyst logic cannot tell us whether the 17 features transfer. We would start with the normalisation and a
+temporal split, since that number says more about deployability than anything above. The errors point to late fusion
+next, then to a calibrated threshold chosen from a stated false-alarm budget. Testing the 17 features on a second
+corpus would come last.
 
 % ---------------------------------------------------------------------
 \section{Conclusion}
