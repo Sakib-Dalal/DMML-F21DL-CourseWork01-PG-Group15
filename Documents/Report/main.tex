@@ -117,7 +117,7 @@ We train six supervised models, two clusterers and four convolutional networks. 
 tabular models reach 0.9944 to 0.9996 accuracy. The screenshot networks reach 0.8750 to 0.8962 on 2{,}400 images,
 roughly ten points behind. Page measurements beat address measurements, and a tree with three questions still
 reaches 0.9896. The unsupervised result surprised us. A Gaussian mixture recovers both classes with an adjusted
-Rand index of 0.985 and no labels at all. That figure says more about the corpus than about detection, so we read
+Rand index of 0.985 and no labels at all. A figure that high says more about the corpus than about detection, so we read
 it as a warning and not as a result.\par}
 \normalsize
 \vspace{3pt}
@@ -252,7 +252,7 @@ page. \texttt{URLSimilarityIndex} is the one that mattered most.
 Cleaning found little to repair and one thing to be afraid of. There were 425 duplicate addresses, no missing
 values, and no constant column. We dropped the four identifier columns first, because a URL or a file name is a
 memory of the training set rather than a property of a page. Top-level domain went through a label encoder that gave 695 levels.
-That left 52 numeric columns and 235{,}370 unique websites, of which 134{,}850 are legitimate (57.3~\%)
+What remained was 52 numeric columns and 235{,}370 unique websites, of which 134{,}850 are legitimate (57.3~\%)
 and 100{,}520 phishing (42.7~\%). Answering ``legitimate'' every time scores 0.5729, and we read every result
 below against that floor.
 
@@ -260,7 +260,7 @@ Our first ranking put \texttt{URLSimilarityIndex} far ahead of everything else, 
 rather than a result. That column sits at exactly 100 for \emph{every one} of the 134{,}850 legitimate websites,
 and for only 786 of the 100{,}520 phishing ones, so it separates the classes by restating the label. The other two
 similarity columns behave the same way, with 98{,}439 legitimate sites pinned at 100. We removed all three before
-any model saw the data, and every score here is measured without them. That was the most important call we made,
+any model saw the data, and every score here is measured without them. Dropping them was the most important call we made,
 and it is why our numbers sit below the published ones for this dataset.
 
 What survives is a set of page-level flags, and URL length shows how much easier this corpus is than the real
@@ -282,11 +282,11 @@ Only five of those describe the address string. Twelve measure the page, and tha
 \label{fig:eda}
 \end{figure}
 
-The visual corpus needed real work. Two sources gave us 91{,}740 indexed screenshots, and one auditing pass threw
-out 30{,}365 on three grounds at once: files that would not decode, single-colour renders caught by a pixel
+Two sources gave us 91{,}740 indexed screenshots, and one auditing pass threw out 30{,}365 on three grounds
+at once: files that would not decode, single-colour renders caught by a pixel
 standard deviation below 1.0, and exact duplicates found by hashing a $64\times64$ RGB thumbnail
-(Appendix~\ref{app:clean}). That left 61{,}375 images, badly unequal at 50{,}945 legitimate against 10{,}430
-phishing. A network trained on that ratio learns the prior of the corpus instead of the look of a page, so we
+(Appendix~\ref{app:clean}). The audit left 61{,}375 images, badly unequal: 50{,}945 legitimate against
+10{,}430 phishing. A network trained on that ratio learns the prior of the corpus instead of the look of a page, so we
 capped each class at 8{,}000 and split 70/15/15 into 11{,}200 training, 2{,}400 validation and 2{,}400 test images
 at $224\times224$. Balancing discards 42{,}945 legitimate images, a cost we accepted knowingly: redundant data
 traded for a test set whose accuracy can be read.
@@ -348,9 +348,9 @@ geometric augmentation, which with hindsight is the weakest choice in the study.
 
 We loaded ResNet-18, MobileNetV3-Small and EfficientNet-B0 with ImageNet weights, replaced the final layer with a
 two-way linear head, and fine-tuned end to end with no frozen blocks for 8 epochs on Adam at $5\times10^{-4}$,
-keeping the same batch size, weight decay, input size and split. Holding the recipe fixed is what lets us attribute
-Table~\ref{tab:img} to architecture rather than to tuning. Image work ran on one NVIDIA A100-SXM4-80GB. The
-tabular work ran on CPU.
+keeping the same batch size, weight decay, input size and split, so any difference in
+Table~\ref{tab:img} belongs to the architecture. Image work ran on one NVIDIA A100-SXM4-80GB; the tabular work
+ran on CPU.
 
 % ---------------------------------------------------------------------
 \section{Results}
@@ -384,7 +384,7 @@ Gaussian NB     & 0.9944 & 0.9922 & 0.9980 & 0.9951 & 396 \\
 \end{table}
 
 
-RQ2 asks a different question. No address measurement reaches the top four of either ranking. Fig.~\ref{fig:tree} makes the mechanism legible instead of inferential. The first split asks whether the page holds more than a threshold
+RQ2 asks a different question. No address measurement reaches the top four of either ranking. Fig.~\ref{fig:tree} shows the mechanism directly. The first split asks whether the page holds more than a threshold
 number of external references; the second, whether its code runs past a few hundred lines; the third, whether it
 carries social links. All three are page-level, and address evidence gets in only through the density of special
 characters. Depth three costs 0.0090 against the unconstrained tree: 0.9896 on test and 0.9888 on its own training rows,
@@ -399,7 +399,7 @@ three questions are page-level, which answers RQ2 in one picture.}
 \label{fig:tree}
 \end{figure*}
 
-Both clusterers ran at $k=2$ chosen by silhouette, and both were scored against labels they never saw (Table~\ref{tab:clust}). $k$-means reaches an ARI of 0.892. A Gaussian mixture reaches 0.985, close to what a supervised model gets. Its contingency table shows what that means. One group comes out almost
+Both clusterers ran at $k=2$ chosen by silhouette and were scored against labels they never saw (Table~\ref{tab:clust}). $k$-means reaches an ARI of 0.892; a Gaussian mixture reaches 0.985, close to what a supervised model gets. Its contingency table shows what that means. One group comes out almost
 entirely legitimate and the other almost entirely phishing, with a few thousand websites sitting on the wrong side
 of the line.
 
@@ -443,12 +443,12 @@ MobileNetV3-Small & 0.8750 & 0.8961 & 0.8483 & 0.9017 & 0.8716 & 0.9366 & 1.52M 
 \end{table*}
 
 Fig.~\ref{fig:curves} in Appendix~B shows how our network trained. Training accuracy climbs to 0.9934. Validation accuracy stalls at 0.9012 from the eleventh epoch, so the gap
-widens to 0.0922, and validation loss falls to 0.3210 and then flattens. So it is memorising the 11{,}200 images it has seen rather than learning layout that transfers to 2{,}400 it has not. There is a transient at epoch
-three where validation accuracy drops to 0.7392 before recovering. A constant learning rate would not have
+widens to 0.0922, and validation loss falls to 0.3210 and then flattens. The network is memorising the 11{,}200 images it has seen rather than learning layout that transfers to 2{,}400 it has not. Validation accuracy drops to 0.7392 at epoch
+three and then recovers. A constant learning rate would not have
 survived that step.
 
 The confusion matrix splits the 258 test errors evenly: 129 legitimate pages blocked and 129 phishing pages
-through, leaving 1{,}071 correct on each side. That symmetry matters operationally, because the two errors cost
+through, leaving 1{,}071 correct on each side. The symmetry matters operationally, because the two errors cost
 different things. A false alarm sends a customer to a help desk; a missed page sends a password to an attacker.
 
 Two further analyses point the same way. We stratified the errors by source and the network got 182 of 1{,}850
@@ -471,8 +471,8 @@ would make, computed by a crawler that had already visited both classes, so the 
 reasoning and a supervised model relearns it without much effort. Our strongest column was a similarity index
 pinned at 100 for every legitimate site, and removing that family cost us a perfect score. What it left is a model
 measured against a fair question, which is the warning in the survey literature
-\cite{khonji2013phishing,basit2021comprehensive} and in the dataset's own caveat \cite{prasad2024phiusiil}. It
-also explains the distance between our numbers and the 0.99-plus figures quoted for this file.
+\cite{khonji2013phishing,basit2021comprehensive} and in the dataset's own caveat \cite{prasad2024phiusiil}. The same leakage explains the distance between
+our numbers and the 0.99-plus figures quoted for this file.
 
 Page evidence beats address evidence, and the mechanism is cost. RQ2 is answered three times over: the
 correlations, the forest's importances and the shape of the tree agree. An attacker can shorten a URL, add a
@@ -484,7 +484,7 @@ literature does not stress: the first split counts external references, and an a
 changing what a page does, so the advantage is one of cost rather than a guarantee.
 
 The clustering result is about the dataset, not about detection. An ARI of 0.985 with no labels is the most
-surprising number here, and we do not read it as a working detector. It says the two classes occupy two dense
+surprising number here, and we do not read it as a working detector. The two classes occupy two dense
 regions of this feature space, which is a property of how the corpus was built: two populations crawled from two
 kinds of source carry different fingerprints. It says nothing about which region is dangerous, because a clusterer
 labels groups by size and position rather than by meaning. The mixture beating $k$-means fits the theory, since
@@ -524,15 +524,15 @@ the 17 features on a second corpus would come last.
 \section{Conclusion}
 % ---------------------------------------------------------------------
 
-We set out to answer the question a browser vendor has to answer before shipping a detector. Is the address a
-site sits on the better clue that it is fake, or is the way the page looks? The answer is the page. Across three
-published corpora, one tabular and two visual, a model reading page measurements separated the classes almost
+We set out to answer a question a browser vendor faces before shipping a detector: whether the address a site
+sits on is the better clue that it is fake, or the way the page looks. Across three published corpora, one
+tabular and two visual, the answer is the page. A model reading page measurements separated the classes almost
 perfectly while four convolutional networks did well and nowhere near as well, and the gap between them is the
 value of the information a picture throws away. The methods behind that ranking were deliberately ordinary:
 logistic regression, nearest neighbours, naive Bayes, a tree, a forest and an MLP on the table, and transfer
 learning from ImageNet backbones on the pixels.
 
-Two results matter beyond it. A clusterer recovered the classes with no labels at all, which tells us the corpus
+A clusterer recovered the classes with no labels at all, which tells us the corpus
 is easier than the problem it stands in for. And one family of columns had to go before any model could be
 trusted, so a high score on a crawled corpus measures the corpus as much as the model.
 
