@@ -110,16 +110,17 @@ Rishab Dhinesh     & H0058666 \\
 % =====================================================================
 \pagestyle{plain}
 
-\noindent{\fontsize{11}{13.2}\selectfont\itshape\textbf{Abstract}---A phishing page copies somebody else's
-login page to collect a password that does not belong to it. We ask whether the address a page sits on, or the way
-the page \emph{looks}, is the stronger evidence that it is fake. We answer it with one protocol across three
-published, freely licensed datasets: 235{,}370 unique websites described by 50 page measurements, and 61{,}375
-cleaned screenshots. After removing three columns that restate the answer, we train six supervised models, two
-clusterers and four convolutional networks. The tabular models reach 0.9944 to 0.9996 accuracy on 70{,}611 held-out
-websites; the screenshot networks reach 0.8750 to 0.8962 on 2{,}400 images, a gap of about ten points. Page
-measurements outrank address measurements, and a three-question tree still reaches 0.9896. Most surprising, a
-Gaussian mixture recovers the classes with an adjusted Rand index of 0.985 and no labels, which says more about the
-corpus than about detection.\par}
+\noindent{\fontsize{11}{13.2}\selectfont\itshape\textbf{Abstract}---A phishing page is a copy of somebody
+else's login page. Its job is to collect a password that was never meant for it. This report asks a narrow question
+instead of a general one: is the address a page sits on the stronger evidence that it is fake, or is the way the page
+looks? Both views are measured under one protocol, across three published datasets under free licences, covering
+235{,}370 unique websites described by 50 page measurements and 61{,}375 cleaned screenshots. Six supervised models,
+two clusterers and four convolutional networks are trained. On 70{,}611 held-out websites the tabular models reach
+0.9944 to 0.9996 accuracy. The screenshot networks reach 0.8750 to 0.8962 on 2{,}400 images, about ten points behind.
+Page measurements beat address measurements, and a three-question tree still reaches 0.9896. The surprise is the
+unsupervised result: a Gaussian mixture recovers the two classes with an adjusted Rand index of 0.985 and no labels
+at all. That number says more about the corpus than about detection, and we treat it as a warning rather than a
+result.\par}
 \normalsize
 \vspace{3pt}
 
@@ -127,95 +128,96 @@ corpus than about detection.\par}
 \section{Introduction}
 % ---------------------------------------------------------------------
 
-A phishing page is a copy of a login page somebody else owns, and it exists to collect a password. Page savers
-and free hosting make a convincing clone an afternoon's work; it can be used and thrown away before a blocklist
-catches up. Because the page is a copy, the victim is never asked to trust a stranger. They are asked to log in to a
-service they already use, which is how the trick keeps working, and why phishing remains one of the most reported
-forms of cybercrime \cite{khonji2013phishing,basit2021comprehensive}.
+Phishing works because it borrows trust. The page is a copy of a login form somebody else owns, and the password
+typed into it goes somewhere else. Page savers and free hosting make a convincing clone an afternoon's work, cheap
+enough to be used once and thrown away before a blocklist catches up. The victim is never asked to trust a stranger.
+They are asked to log in to a service they already use, which is why phishing is still one of the most reported forms
+of cybercrime \cite{khonji2013phishing,basit2021comprehensive}.
 
-The problem is three problems, because three teams act on the verdict. A browser vendor needs an answer in the
-time it takes to paint a page, with no GPU available. A security analyst needs to know \emph{why} a page was
-blocked, because an unexplained block gets appealed. A bank needs to know how many blocks are real, because a
-false alarm sends a customer into a telephone queue. Accuracy answers none of that, so we report precision,
-recall, latency and cost beside it.
+Three teams act on the verdict, and they need three different things. A browser vendor needs an answer in the time it
+takes to paint a page, on a machine with no GPU. A security analyst needs to know \emph{why} a page was blocked,
+because an unexplained block gets appealed. A bank needs to know how many blocks are real, because a false alarm puts
+a customer in a telephone queue. Accuracy answers none of these, so we report precision, recall, latency and cost
+beside it.
 
-Research has followed the available evidence rather than the problem. The address string gives one line: its
-length and digits, the hyphens, the sub-domains
-\cite{sahingoz2019ml,rao2019detection,marchal2014phishstorm}. The page source gives another, counting links that
-point off-site and forms that post to a third party \cite{rao2019detection,fette2007learning}. A third reads the
-picture, on the argument that an attacker must copy the look of a page and rarely the address
-\cite{lin2021phishpedia}. All three report scores near or above 0.95, which is suspicious. A detector scoring 0.999
-on a random split of a crawled corpus is not necessarily one that scores 0.999 on tomorrow's pages
-\cite{marchal2014phishstorm}. The gap is a comparison rather than another detector. Tabular and visual evidence are
-rarely put against each other under one protocol, and unsupervised separation is rarely reported at all. Where the
-best score and the most explainable model disagree, the score usually wins.
+Research has followed whatever evidence was easiest to collect. The address string gives one line: its length, its
+digits, the hyphens, the sub-domains \cite{sahingoz2019ml,rao2019detection,marchal2014phishstorm}. The page source
+gives another, counting links that point off-site and forms that post to a third party
+\cite{rao2019detection,fette2007learning}. A third line reads the picture, on the argument that an attacker must copy
+the look of a page and rarely the address \cite{lin2021phishpedia}. All of them report scores near or above 0.95, and
+that is the first thing to distrust. A detector scoring 0.999 on a random split of a crawled corpus is not
+necessarily one that scores 0.999 on tomorrow's pages \cite{marchal2014phishstorm}. What is missing is a comparison,
+not another detector. Tabular and visual evidence are seldom put against each other under one protocol, and
+unsupervised separation is hardly ever reported at all. When the best score and the most explainable model disagree,
+the score usually wins.
 
 \textbf{RQ1: can a model separate phishing from legitimate pages using tabular evidence, and how well?}
-\emph{Hypothesis 1: yes, above 0.95.} We take 0.95 from the published baselines, which report above 0.97 from
-URL words alone \cite{sahingoz2019ml} and near-perfect scores from selected address and page features
-\cite{rao2019detection}; our file measures the page as well, so it should be no harder. It fails if no model
-clears 0.95.
+\emph{Hypothesis 1: yes, above 0.95.} The 0.95 comes from the published baselines, which report above 0.97 from URL
+words alone \cite{sahingoz2019ml} and near-perfect scores from selected address and page features
+\cite{rao2019detection}. Our file measures the page as well, so the task should be no harder. The hypothesis fails if
+no model clears 0.95.
 
 \textbf{RQ2: is the address or the page the stronger evidence?} \emph{Hypothesis 2: the page.} The argument is
-attacker cost. A URL can be shortened, hyphenated or pushed behind HTTPS in minutes, precisely the weakness
-Khonji \emph{et al.} name: features cheap for us to compute are cheap to imitate \cite{khonji2013phishing}. A
-credible reference count, a description, social links and a realistic quantity of code are outputs of a real
-publishing pipeline, and Fette \emph{et al.} found the same asymmetry in email, where structural evidence
-outlived lexical evidence \cite{fette2007learning}. It fails if address features dominate both rankings and the
-tree.
+attacker cost. A URL can be shortened, hyphenated or pushed behind HTTPS in minutes, which is the weakness Khonji
+\emph{et al.} name: features cheap for us to compute are cheap to imitate \cite{khonji2013phishing}. A credible
+reference count is not cheap. Neither is a description, social links, or a realistic amount of code, because all four
+come out of a real publishing pipeline. Fette \emph{et al.} found the same asymmetry in email, where structural
+evidence outlived lexical evidence \cite{fette2007learning}. It fails if address features dominate both rankings and
+the tree.
 
-\textbf{RQ3: can clustering recover the two classes without labels?} \emph{Hypothesis 3: no, not well.} We
-expected failure for two reasons: detection is treated throughout as supervised \cite{basit2021comprehensive},
-and cluster analysis of mixed binary and count features tends to split on the largest difference in scale rather
-than on meaning. Our bar is an adjusted Rand index (ARI) of 0.5. It fails if either algorithm clears it.
+\textbf{RQ3: can clustering recover the two classes without labels?} \emph{Hypothesis 3: no, not well.} There are
+two reasons to expect failure. Detection is treated as supervised throughout the literature
+\cite{basit2021comprehensive}, and clustering mixed binary and count features tends to split on the largest
+difference in scale rather than on meaning. Our bar is an adjusted Rand index (ARI) of 0.5, and it fails if either
+algorithm clears it.
 
-\textbf{RQ4: can a page be judged from its screenshot alone?} \emph{Hypothesis 4: partly, and worse than the
-table.} A screenshot keeps the layout and the colour. It loses the address bar, the text and the HTML that produced
-the page. Phishpedia
-shows pixels carry real signal, but its method matches maintained brand references \cite{lin2021phishpedia}, a
-narrower question than deciding whether a page is honest. It fails if the picture models match the tabular ones.
+\textbf{RQ4: can a page be judged from its screenshot alone?} \emph{Hypothesis 4: partly, and worse than the table.}
+A screenshot keeps the layout and the colour. It loses the address bar, the text, and the HTML that produced the
+page. Phishpedia shows that pixels carry real signal, but its method matches maintained brand references
+\cite{lin2021phishpedia}, which is a narrower question than whether a page is honest. It fails if the picture models
+match the tabular ones.
 
 % ---------------------------------------------------------------------
 \section{Related Work}
 % ---------------------------------------------------------------------
 
-\emph{Classical detection treats a page as a vector of measurements.} Sahingoz \emph{et al.}
-\cite{sahingoz2019ml} compared seven classifiers on URL words and reported above 0.97 with a random forest,
-establishing both the strength of the signal and the convention of measuring it by accuracy on a random split.
-Rao and Pais \cite{rao2019detection} built a larger set from address and page source, selected it with a wrapper,
-and reported near-perfect scores; their feature list is the ancestor of our four families. Marchal \emph{et al.}
-\cite{marchal2014phishstorm} took the idea to stream scale, which is the setting a browser faces. Khonji
-\emph{et al.} \cite{khonji2013phishing} name the weakness rather than the strength: features cheap to compute
-are cheap to imitate, and features hard to imitate are expensive at browse time. 
+The classical line treats a page as a vector of measurements. Sahingoz \emph{et al.} \cite{sahingoz2019ml} compared
+seven classifiers on URL words and reported above 0.97 with a random forest, which established both the strength of
+the signal and the convention of quoting accuracy on a random split. Rao and Pais \cite{rao2019detection} built a
+larger set from address and page source, selected it with a wrapper, and reported near-perfect scores; their feature
+list is the ancestor of our four families. Marchal \emph{et al.} \cite{marchal2014phishstorm} took the idea to stream
+scale, which is the setting a browser actually faces. Khonji \emph{et al.} \cite{khonji2013phishing} name the
+weakness rather than the strength: features cheap to compute are cheap to imitate, and features hard to imitate are
+expensive at browse time.
 
-\emph{Structure beats strings.} Fette \emph{et al.} \cite{fette2007learning} found that structural evidence
-generalised better than lexical evidence in email, because structure is a by-product of the tooling that builds real
-messages, which is why feature-based detectors generalise better than string-only ones
-\cite{basit2021comprehensive}.
+Fette \emph{et al.} \cite{fette2007learning} found that structural evidence generalised better than lexical evidence
+in email. Structure is a by-product of the tooling that builds real messages, and a by-product is hard to fake
+without actually building the thing. That result is why feature-based detectors generalise better than string-only
+ones \cite{basit2021comprehensive}.
 
-\emph{Pixels make the strongest narrow case.} Phishpedia \cite{lin2021phishpedia} abandons the URL blocklist and
-matches logo and layout against protected brands, fast enough for live traffic, on the argument that an attacker
-controls the address but must copy the appearance. The cost is a brand reference set to maintain and a blind
-spot for pages imitating no known brand. Transfer learning from ImageNet backbones
-\cite{he2016deep,tan2019efficientnet,howard2019searching} is the standard way to get a usable visual classifier
-from a few thousand images, and it is the recipe we follow.
+Phishpedia \cite{lin2021phishpedia} is the strongest narrow case. It abandons the URL blocklist and matches logo and
+layout against protected brands, fast enough for live traffic, on the argument that an attacker controls the address
+but must copy the appearance. The price is a brand reference set to maintain, and a blind spot for pages that imitate
+no known brand. Transfer learning from ImageNet backbones \cite{he2016deep,tan2019efficientnet,howard2019searching}
+is the standard way to get a usable visual classifier out of a few thousand images, and it is the recipe followed
+here.
 
-\emph{Corpus design is a hidden variable.} PhiUSIIL \cite{prasad2024phiusiil} is a good modern corpus: large,
-licensed, and crawled from two kinds of source, which is what makes it usable and also what makes it separable.
-Its authors report the problem we met, that some columns compare the URL against the page title or domain and so
-nearly encode the label; a model that keeps them learns the rule that built the dataset. Marchal \emph{et al.}
-\cite{marchal2014phishstorm} raise the second design problem, drift: phishing changes every quarter, so a random
-split over one crawl flatters every model trained on it. Three things are therefore absent from this literature,
-and our experiments are organised around them: a head-to-head of tabular and visual evidence under one protocol
-(RQ1 against RQ4), any report of unsupervised separation (RQ3), and a measured cost for choosing the explainable
-model over the most accurate one (RQ2 and Section~\ref{sec:disc}).
+Corpus design is the hidden variable. PhiUSIIL \cite{prasad2024phiusiil} is a good modern corpus: large, licensed,
+and crawled from two kinds of source, which is what makes it usable and also what makes it separable. Its authors
+report the problem we met, that some columns compare the URL against the page title or domain and so nearly encode
+the label; a model that keeps them learns the rule that built the dataset. Marchal \emph{et al.}
+\cite{marchal2014phishstorm} raise the second design problem, drift. Phishing changes every quarter, so a random
+split over one crawl flatters every model trained on it. Three things are therefore absent from this literature, and
+our experiments are organised around them: a head-to-head of tabular and visual evidence under one protocol (RQ1
+against RQ4), any report of unsupervised separation (RQ3), and a measured cost for preferring the explainable model
+to the most accurate one (RQ2 and Section~\ref{sec:disc}).
 
 % ---------------------------------------------------------------------
 \section{Dataset Description and Analysis}
 % ---------------------------------------------------------------------
 
-We use two views of one problem, drawn from three published datasets. Table~\ref{tab:data} gives their source,
-licence and shape.
+We use two views of one problem, drawn from three published datasets. Table~\ref{tab:data} gives source, licence and
+shape.
 
 \begin{table*}[!t]
 \centering
@@ -244,38 +246,37 @@ CC BY 4.0 (Zenodo); research use (Phishpedia) \\
 \end{tabular}
 \end{table*}
 
-Of the 56 columns, 50 are numeric measurements, four are text (\texttt{URL}, \texttt{Domain}, \texttt{TLD},
-\texttt{Title}), one is an identifier and one the target. The measurements fall into four families.
+The file holds 56 columns, 50 of them numeric measurements. Four are text (\texttt{URL}, \texttt{Domain}, \texttt{TLD},
+\texttt{Title}), one is an identifier, and one the target. The measurements fall into four families.
 \emph{Address} columns describe the string (\texttt{URLLength}, \texttt{DegitRatioInURL}, \texttt{IsHTTPS}).
 \emph{Content} columns count what the page holds (\texttt{NoOfImage}, \texttt{NoOfJS}, \texttt{LineOfCode}).
 \emph{Trust} columns are flags an analyst checks by eye (\texttt{HasCopyrightInfo}, \texttt{HasSocialNet}).
 \emph{Similarity} columns compare address against page, such as \texttt{URLSimilarityIndex}.
 
-Cleaning found little to fix and one thing to fear. There are 425 duplicate addresses, no missing values and no
-constant column. We dropped the four identifier columns, because a URL or file name is a memory of the training set
-rather than a property of the page, and label-encoded the top-level domain (695 levels). That left 52 numeric columns
-and 235{,}370 unique websites: 134{,}850 legitimate (57.3~\%) and 100{,}520 phishing (42.7~\%). A model that always
-answers ``legitimate'' scores 0.5729, and every result below is read against that.
+Cleaning found little to fix, and one thing to fear. There are 425 duplicate addresses, no missing values, and no
+constant column. The four identifier columns went first, because a URL or a file name is a memory of the training set
+rather than a property of the page. The top-level domain was label-encoded at 695 levels. That left 52 numeric
+columns and 235{,}370 unique websites: 134{,}850 legitimate (57.3~\%) and 100{,}520 phishing (42.7~\%). A model that
+always answers ``legitimate'' scores 0.5729, and every result below is read against that number.
 
-A first ranking put \texttt{URLSimilarityIndex} far ahead of everything else, which was a warning rather than a
-result. Checked against the raw file, the column is exactly 100 for \emph{all} 134{,}850 legitimate websites and
-for only 786 of the 100{,}945 phishing ones: it separates the classes because it restates the label, not because
-similarity predicts phishing. The other two similarity columns behave the same way, with 98{,}439 legitimate
-sites pinned at 100, so a model given them answers without looking at the page. We removed all three before any
-model saw the data, and every score here is measured without them. This is the most important decision in the
-study, and it is why our numbers sit below the values published for this dataset.
+A first ranking put \texttt{URLSimilarityIndex} far ahead of everything else. That was a warning, not a result.
+Checked against the raw file, the column is exactly 100 for \emph{all} 134{,}850 legitimate websites and for only
+786 of the 100{,}945 phishing ones. It separates the classes because it restates the label, not because similarity
+predicts phishing. The other two similarity columns behave the same way, with 98{,}439 legitimate sites pinned at
+100, so a model given them answers without looking at the page. All three were removed before any model saw the
+data, and every score here is measured without them. This is the most important decision in the study, and it is why
+our numbers sit below the values published for this dataset.
 
-\emph{Exploratory analysis.} After removal the strongest signals are page-level flags, and URL length shows how
-much easier the corpus is than the problem. Legitimate addresses occupy a narrow band, averaging 26.2 characters
-with a maximum of 57; phishing addresses average 45.7 and reach 6{,}097, because a long tail carries query strings
-and redirects (Fig.~\ref{fig:eda}, left). Such a clean separation is the signature of a corpus built from two
-kinds of source, and the flags an analyst checks by eye separate the classes almost as sharply
-(Fig.~\ref{fig:eda}, right). Correlation puts \texttt{HasSocialNet} (0.78), \texttt{HasCopyrightInfo} (0.74),
-\texttt{HasDescription} (0.69) and \texttt{IsHTTPS} (0.61) first, while the strongest address measurement is
-negative, \texttt{SpacialCharRatioInURL} at $-0.53$, then \texttt{DegitRatioInURL} at $-0.43$. The forest's
-out-of-bag importance agrees on the first four, and we kept the 17 features both rankings
-placed inside their top twenty. Only five describe the address string, so twelve measure the page before any
-model is trained.
+What survives is page-level flags, and URL length shows how much easier this corpus is than the problem. Legitimate
+addresses occupy a narrow band, averaging 26.2 characters with a maximum of 57. Phishing addresses average 45.7 and
+reach 6{,}097, because a long tail carries query strings and redirects (Fig.~\ref{fig:eda}, left). Separation that
+clean is the signature of a corpus built from two kinds of source, and the flags an analyst checks by eye separate
+the classes almost as sharply (Fig.~\ref{fig:eda}, right). Correlation puts \texttt{HasSocialNet} (0.78),
+\texttt{HasCopyrightInfo} (0.74), \texttt{HasDescription} (0.69) and \texttt{IsHTTPS} (0.61) first. The strongest
+address measurement is negative, \texttt{SpacialCharRatioInURL} at $-0.53$, then \texttt{DegitRatioInURL} at
+$-0.43$. The forest's out-of-bag importance agrees on the first four, and we kept the 17 features both rankings
+placed inside their top twenty. Only five describe the address string, so twelve measure the page before any model
+is trained.
 
 \begin{figure}[!t]
 \centering
@@ -285,88 +286,83 @@ model is trained.
 \label{fig:eda}
 \end{figure}
 
-
-
-\emph{The visual corpus needed real work.} Two sources contributed 91{,}740 indexed screenshots (Phishpedia
-40{,}922 legitimate and 29{,}507 phishing; Zenodo 12{,}241 and 9{,}070). Auditing removed 30{,}365 in one pass
-for three reasons applied together: files that would not decode, single-colour renders caught by a pixel standard
-deviation below 1.0, and exact duplicates found by hashing a $64\times64$ RGB thumbnail. That left 61{,}375
-images, but the classes were badly unequal, 50{,}945 legitimate against 10{,}430 phishing. A network trained on
-that ratio learns the prior of the corpus rather than the look of a page, so we sampled 8{,}000 per class and
-split 70/15/15 into 11{,}200 training, 2{,}400 validation and 2{,}400 test images at $224\times224$. Balancing
-discards 42{,}945 legitimate images, a cost we accept knowingly: it trades redundant data for a test set whose
-accuracy is interpretable.
+The visual corpus needed real work. Two sources contributed 91{,}740 indexed screenshots: Phishpedia 40{,}922
+legitimate and 29{,}507 phishing, Zenodo 12{,}241 and 9{,}070. One auditing pass removed 30{,}365 of them, on three
+grounds applied together: files that would not decode, single-colour renders caught by a pixel standard deviation
+below 1.0, and exact duplicates found by hashing a $64\times64$ RGB thumbnail. That left 61{,}375 images, and the
+classes were badly unequal, 50{,}945 legitimate against 10{,}430 phishing. A network trained on that ratio learns the
+prior of the corpus rather than the look of a page. We therefore sampled 8{,}000 per class and split 70/15/15 into
+11{,}200 training, 2{,}400 validation and 2{,}400 test images at $224\times224$. Balancing discards 42{,}945
+legitimate images. That cost is accepted knowingly: it trades redundant data for a test set whose accuracy can be
+interpreted.
 
 The images are coarse in a way that matters for RQ4. Mean brightness is 180.7 for legitimate pages and 189.8 for
-phishing, mean contrast 55.4 against 44.1, and edge strength 6.9 against 4.6: phishing pages are on average
-brighter and flatter, though the distributions overlap heavily. At $224\times224$ a page 4{,}000 pixels tall is
-compressed into a square, so two pages with the same header and different forms become almost the same image.
-Both primary datasets are CC BY 4.0 and attributed in the bibliography; the Phishpedia benchmark is research-use
-only, so it is neither redistributed nor used commercially. The screenshots contain real brand marks and
-occasional personal data, so the corpus stays out of version control and no live site was visited.
+phishing, mean contrast 55.4 against 44.1, and edge strength 6.9 against 4.6. Phishing pages are brighter and
+flatter on average, though the distributions overlap heavily. At $224\times224$ a page 4{,}000 pixels tall is
+compressed into a square, so two pages with the same header and different forms become almost the same image. Both
+primary datasets are CC BY 4.0 and attributed in the bibliography. The Phishpedia benchmark is research-use only, so
+it is neither redistributed nor used commercially. The screenshots contain real brand marks and occasional personal
+data, so the corpus stays out of version control and no live site was visited.
 
 % ---------------------------------------------------------------------
 \section{Experimental Setup}
 \label{sec:setup}
 % ---------------------------------------------------------------------
 
-\emph{Protocol.} We split the tabular data 70/30 with stratification, fitted every transformer on training rows only,
-fixed the seed at 42 and touched the test rows once, so every supervised model saw the same 17 features and the same
-70{,}611 websites. For the images, 2{,}400 validation images chose the epoch and 2{,}400 test images were scored once.
+We split the tabular data 70/30 with stratification. Every transformer was fitted on training rows only, the seed was
+fixed at 42, and the test rows were touched once, so every supervised model saw the same 17 features and the same
+70{,}611 websites. For the images, 2{,}400 validation images chose the epoch and 2{,}400 test images were scored
+once.
 
-\emph{Metrics, and why these.} The tabular classes are 57/43, so accuracy alone would flatter a model leaning on
-the majority, and we report precision, recall and $F_1$ beside it for every model. Clustering is scored with the
-adjusted Rand index and normalised mutual information, because both compare discovered groups against labels the
-algorithm never saw and both correct for agreement by chance. For the images we add threshold-free ROC-AUC and the
-Matthews correlation coefficient, and we time every tabular model on 5{,}000 test rows, because a vendor's
-constraint is latency rather than accuracy.
+Accuracy alone would flatter a model leaning on the 57/43 majority, so precision, recall and $F_1$ are reported beside
+it for every model. Clustering is scored with the adjusted Rand index and normalised mutual information, because both
+compare discovered groups against labels the algorithm never saw and both correct for agreement by chance. For the
+images we add threshold-free ROC-AUC and the Matthews correlation coefficient. Every tabular model is timed on
+5{,}000 test rows, because a vendor's constraint is latency rather than accuracy.
 
+Both model families are present, though not equally. Gaussian naive Bayes is generative: it models class-conditional
+densities and applies Bayes' rule, which is why its independence assumption fits badly here, where the flags are
+strongly correlated. The Gaussian mixture is generative but stronger, fitted by expectation-maximisation
+\cite{dempster1977maximum}, the algorithm the syllabus pairs with $k$-means. Everything else learns a boundary
+directly: logistic regression, $k$-nearest neighbours, the decision tree and forest, the MLP, and the four networks.
+Naive Bayes also appears among the six supervised classifiers in Table~\ref{tab:class}, so the generative family
+answers RQ1 as well as RQ3, while the discriminative models answer RQ1, RQ2 and RQ4.
 
-
-\emph{Generative and discriminative coverage.} Both families are present, though not equally. Gaussian naive
-Bayes is generative: it models class-conditional densities and applies Bayes' rule, which is why its
-independence assumption fits badly here, where the flags are strongly correlated. The Gaussian mixture is
-generative but stronger, fitted by expectation-maximisation \cite{dempster1977maximum}, the algorithm the
-syllabus pairs with $k$-means. Everything else learns a boundary directly: logistic regression, $k$-nearest
-neighbours, the decision tree and forest, the MLP and the four networks. Naive Bayes is also one of the six supervised classifiers in Table~\ref{tab:class}, so the generative family
-answers RQ1 as well as RQ3; the discriminative models answer RQ1, RQ2 and RQ4.
-
-\emph{Why these nine models.} The five classical models are the standard spread for a tabular problem and each
-fails differently: a linear boundary, a local vote, a strong independence assumption, a single axis-aligned tree
-\cite{quinlan1986induction}, and an ensemble that averages many trees to cut variance \cite{breiman2001random}.
-Including all five is what makes the near-identical scores in Section~\ref{sec:res} meaningful, because the
-agreement is then between methods that share almost nothing.  The four networks cover RQ4 from both ends: one we designed, and three ImageNet
-models \cite{he2016deep,tan2019efficientnet,howard2019searching} fine-tuned on the same head, so any difference is
+The five classical models are the standard spread for a tabular problem, and each fails differently: a linear
+boundary, a local vote, a strong independence assumption, a single axis-aligned tree \cite{quinlan1986induction}, and
+an ensemble that averages many trees to cut variance \cite{breiman2001random}. Including all five is what makes the
+near-identical scores in Section~\ref{sec:res} mean something, because the agreement is then between methods that
+share almost nothing. The four networks cover RQ4 from both ends: one we designed, and three ImageNet models
+\cite{he2016deep,tan2019efficientnet,howard2019searching} fine-tuned on the same head, so any difference is
 architecture rather than training recipe.
 
-\emph{Searching, without touching the test rows.} Every hyperparameter was chosen on a validation slice of the
-training data, sweeping decision-tree depth from three to twenty, the minimum leaf size, the forest size, the
-number of neighbours, the logistic penalty strength, and four MLP widths from one hidden layer to three. A
-silhouette sweep over two to eight clusters selected two, at 0.310 against 0.274 for three. Two of those searches
-became results in their own right, since the depth-three tree is 0.0090 behind the unconstrained one and the four
-MLP widths are within 0.0002 of each other. Table~\ref{tab:cfg} lists the final settings.
+Every hyperparameter was chosen on a validation slice of the training data, never on the test rows. The sweep covered
+decision-tree depth from three to twenty, the minimum leaf size, the forest size, the number of neighbours, the
+logistic penalty strength, and four MLP widths from one hidden layer to three. A silhouette sweep over two to eight
+clusters selected two, at 0.310 against 0.274 for three. Two of those searches became results in their own right,
+since the depth-three tree is 0.0090 behind the unconstrained one and the four MLP widths are within 0.0002 of each
+other. Table~\ref{tab:cfg} lists the final settings.
 
-\emph{The custom network.} Five convolutional blocks with 32, 64, 128, 256 and 256 filters, each a $3\times3$
-convolution with batch normalisation and $2\times2$ max pooling, then a dense head of 256 and 128 units, GELU,
+The custom network has five convolutional blocks with 32, 64, 128, 256 and 256 filters. Each block is a $3\times3$
+convolution with batch normalisation and $2\times2$ max pooling, followed by a dense head of 256 and 128 units, GELU,
 dropout 0.45 and a two-way output: 4{,}225{,}410 trainable parameters. It ran for 12 epochs with AdamW at
-$3\times10^{-4}$, weight decay $3\times10^{-4}$, batch 64, cosine annealing to zero and label smoothing 0.1.
-Inputs are resized to $224\times224$ and scaled to $[0,1]$; we applied no colour normalisation and no geometric
-augmentation, in hindsight the weakest choice in the study.
+$3\times10^{-4}$, weight decay $3\times10^{-4}$, batch 64, cosine annealing to zero and label smoothing 0.1. Inputs
+were resized to $224\times224$ and scaled to $[0,1]$. No colour normalisation and no geometric augmentation were
+applied, which in hindsight is the weakest choice in the study.
 
-\emph{The transfer baseline.} ResNet-18, MobileNetV3-Small and EfficientNet-B0 were loaded with ImageNet weights,
-their final layer replaced by a two-way linear head, and fine-tuned end to end with no frozen blocks, for 8
-epochs with Adam at $5\times10^{-4}$ and the same batch size, weight decay, input size and split. Holding the
-recipe fixed is what lets us attribute Table~\ref{tab:img} to architecture. Image work ran on one NVIDIA A100-SXM4-80GB, tabular work on CPU.
+ResNet-18, MobileNetV3-Small and EfficientNet-B0 were loaded with ImageNet weights, their final layer replaced by a
+two-way linear head, and fine-tuned end to end with no frozen blocks, for 8 epochs with Adam at $5\times10^{-4}$ and
+the same batch size, weight decay, input size and split. Holding the recipe fixed is what lets us attribute
+Table~\ref{tab:img} to architecture. Image work ran on one NVIDIA A100-SXM4-80GB; tabular work ran on CPU.
 
 % ---------------------------------------------------------------------
 \section{Results}
 \label{sec:res}
 
-\emph{RQ1: classical models on the table.} Table~\ref{tab:class} gives the five classical models on the 70{,}611
-held-out websites. All six clear 0.99; the weakest is Gaussian naive Bayes at 0.9944. The random forest leads the five
-at 0.9995 accuracy and 0.9996 $F_1$; the MLP is a fraction ahead at 0.9996 and 0.9997. Precision and recall move
-together in every row, so nobody buys accuracy by leaning on the majority: the largest gap between them is 0.0058,
-in naive Bayes. 
+Table~\ref{tab:class} gives the five classical models on the 70{,}611 held-out websites. All six clear 0.99, and the
+weakest is Gaussian naive Bayes at 0.9944. The random forest leads the five at 0.9995 accuracy and 0.9996 $F_1$, and
+the MLP is a fraction ahead at 0.9996 and 0.9997. Precision and recall move together in every row, so nobody buys
+accuracy by leaning on the majority; the largest gap between them is 0.0058, in naive Bayes.
 
 \begin{table}[!t]
 \centering
@@ -388,16 +384,17 @@ Gaussian NB     & 0.9944 & 0.9922 & 0.9980 & 0.9951 & 396 \\
 \end{tabular}
 \end{table}
 
-The gap is the result, not the winner: 0.0052 accuracy separates best from worst, about 368 websites, and a
-straight line lands within 0.0011 of 200 trees.
+The gap is the result, not the winner. 0.0052 accuracy separates best from worst, about 368 websites, and a straight
+line lands within 0.0011 of 200 trees.
 
-\emph{RQ2: which evidence ranks higher.} Address measurements appear in neither top four of either ranking. The tree
-in Fig.~\ref{fig:tree} makes the mechanism legible rather than inferential: its first split asks whether the page
-holds more than a threshold number of external references, the second whether the code exceeds a few hundred lines,
-the third whether the page carries social links. All three are page-level, and the address enters only through the
-density of special characters. Depth three costs 0.0090 against the unconstrained tree and buys a model that fits on a page and can be read
-aloud; it reaches 0.9896 on test and 0.9888 on its own training rows, whereas the full tree is 0.9986 on test but
-1.0000 on training. That is its practical case: three questions become three sentences an appeals team can cite, and a reviewer can change a threshold without retraining.
+For RQ2, address measurements appear in neither top four of either ranking. The tree in Fig.~\ref{fig:tree} makes the
+mechanism legible rather than inferential. Its first split asks whether the page holds more than a threshold number
+of external references; the second whether the code exceeds a few hundred lines; the third whether the page carries
+social links. All three are page-level, and the address enters only through the density of special characters. Depth
+three costs 0.0090 against the unconstrained tree and buys a model that fits on a page and can be read aloud. It
+reaches 0.9896 on test and 0.9888 on its own training rows, whereas the full tree is 0.9986 on test but 1.0000 on
+training. That is its practical case: three questions become three sentences an appeals team can cite, and a
+reviewer can change a threshold without retraining.
 
 \begin{figure*}[!t]
 \centering
@@ -407,11 +404,10 @@ three questions are page-level, which answers RQ2 in one picture.}
 \label{fig:tree}
 \end{figure*}
 
-\emph{RQ3: separation without labels.} Table~\ref{tab:clust} gives the two clusterers, both run with $k=2$ by
-silhouette and both scored against labels they never saw. $k$-means reaches an ARI of 0.892 and the Gaussian mixture
-0.985, close to a supervised result. The mixture's contingency table shows what that means: one group is almost
-entirely legitimate and the other almost entirely phishing, with a few thousand websites on the wrong side of the
-line.
+Table~\ref{tab:clust} gives the two clusterers, both run with $k=2$ by silhouette and both scored against labels they
+never saw. $k$-means reaches an ARI of 0.892 and the Gaussian mixture 0.985, which is close to a supervised result.
+The mixture's contingency table shows what that means: one group is almost entirely legitimate and the other almost
+entirely phishing, with a few thousand websites on the wrong side of the line.
 
 \begin{table}[!t]
 \centering
@@ -428,11 +424,11 @@ Gaussian mixture & \textbf{0.985} & \textbf{0.965} \\
 \end{tabular}
 \end{table}
 
-\emph{RQ4: the picture models.} Table~\ref{tab:img} gives the four networks on the 2{,}400 test screenshots.
-EfficientNet-B0 is best at 0.8962 accuracy, 0.8974 $F_1$ and 0.9603 ROC-AUC. Our own network is second at 0.8925
-with 4.23 million parameters, 0.0037 behind EfficientNet's 4.01 million; ResNet-18 is third at 0.8792 but needs
-11.18 million, nearly three times ours; MobileNetV3-Small is last at 0.8750 with 1.52 million. All four sit inside a
-0.0212 band while differing sevenfold in size, so the ceiling is the data rather than the architecture.
+Table~\ref{tab:img} gives the four networks on the 2{,}400 test screenshots. EfficientNet-B0 is best at 0.8962
+accuracy, 0.8974 $F_1$ and 0.9603 ROC-AUC. Our own network is second at 0.8925 with 4.23 million parameters, 0.0037
+behind EfficientNet's 4.01 million. ResNet-18 is third at 0.8792 but needs 11.18 million, nearly three times ours.
+MobileNetV3-Small is last at 0.8750 with 1.52 million. All four sit inside a 0.0212 band while differing sevenfold in
+size, so the ceiling is the data rather than the architecture.
 
 \begin{table*}[!t]
 \centering
@@ -453,11 +449,11 @@ MobileNetV3-Small & 0.8750 & 0.8961 & 0.8483 & 0.9017 & 0.8716 & 0.9366 & 1.52M 
 \end{tabular}
 \end{table*}
 
-Fig.~\ref{fig:curves} shows how our network trained, the clearest single summary of the visual task. Training
-accuracy climbs to 0.9934 while validation accuracy stalls at 0.9012 from the eleventh epoch, so the gap widens to
-0.0921; validation loss falls to 0.3210 and flattens. The network is memorising 11{,}200 images it has seen, not
-learning layout that transfers to 2{,}400 it has not. The transient at epoch three, where validation accuracy drops
-to 0.7392 before recovering, is a step a constant learning rate would not have survived.
+Fig.~\ref{fig:curves} shows how our network trained, and it is the clearest single summary of the visual task.
+Training accuracy climbs to 0.9934 while validation accuracy stalls at 0.9012 from the eleventh epoch, so the gap
+widens to 0.0921. Validation loss falls to 0.3210 and flattens. The network is memorising 11{,}200 images it has
+seen, not learning layout that transfers to 2{,}400 it has not. The transient at epoch three, where validation
+accuracy drops to 0.7392 before recovering, is a step a constant learning rate would not have survived.
 
 \begin{figure}[!t]
 \centering
@@ -469,69 +465,71 @@ accuracy reaches 0.9934.}
 
 The confusion matrix splits the 258 test errors evenly: 129 legitimate pages blocked and 129 phishing pages missed
 out of 2{,}400, giving 1{,}071 correct on each side. That symmetry matters operationally, because the two errors
-carry different costs. Most pages land at the extremes of the predicted-probability scale, but a band between 0.3
-and 0.8 carries most of the errors.
+carry different costs. Most pages land at the extremes of the predicted-probability scale, and a band between 0.3 and
+0.8 carries most of the errors.
 
-\emph{Two further analyses.} Stratifying errors by source, the network got 182 of 1{,}850 Phishpedia images wrong
-(9.8~\%) and 76 of 550 Zenodo images wrong (13.8~\%), so part of the error is domain shift between two capture
-conventions. An interpretability pass showed early blocks responding to edges and text mass and later blocks to the layout
-of a form, and four of the five misclassified samples we inspected were legitimate pages consisting of little more
-than a single centred form.
+Two further analyses point the same way. Stratifying errors by source, the network got 182 of 1{,}850 Phishpedia
+images wrong (9.8~\%) and 76 of 550 Zenodo images wrong (13.8~\%), so part of the error is domain shift between two
+capture conventions. An interpretability pass showed early blocks responding to edges and text mass, and later blocks
+to the layout of a form. Four of the five misclassified samples we inspected were legitimate pages consisting of
+little more than a single centred form.
 
 The two views do not meet. The best tabular model is 0.1034 accuracy above the best screenshot model, at matched
 recall the table still wins, and the screenshot model's ROC-AUC of 0.9603 is below the tabular models' accuracy
-before a threshold is chosen. Hypotheses 1, 2 and 4 are supported; Hypothesis 3 is refuted, and by a wide margin.
+before a threshold is chosen. Hypotheses 1, 2 and 4 are supported. Hypothesis 3 is refuted, and by a wide margin.
 
 % ---------------------------------------------------------------------
 \section{Discussion}
 \label{sec:disc}
 
-\emph{A near-perfect score is a property of the corpus.} The temptation is to read 0.9944 to 0.9996 as phishing
-being nearly solved. These columns are not raw observations but the measurements an analyst would make, computed by
-a crawler that had already visited both classes, so the file contains the analyst's reasoning and a supervised model
-re-learns it easily. The strongest column was a similarity index that was 100 for every legitimate site; removing
-that family cost us a perfect score and left a model measured against a fair question. This is the warning in the
-survey literature \cite{khonji2013phishing,basit2021comprehensive} and in the dataset's own caveat
-\cite{prasad2024phiusiil}, and it explains the distance between our numbers and the 0.99-plus figures quoted for this
-file.
+A score of 0.9996 is a property of the corpus before it is a property of the model. It is tempting to read 0.9944 to
+0.9996 as phishing being nearly solved. These columns are not raw observations. They are the measurements an analyst
+would make, computed by a crawler that had already visited both classes, so the file contains the analyst's reasoning
+and a supervised model re-learns it easily. The strongest column was a similarity index that was 100 for every
+legitimate site. Removing that family cost us a perfect score and left a model measured against a fair question. This
+is the warning in the survey literature \cite{khonji2013phishing,basit2021comprehensive} and in the dataset's own
+caveat \cite{prasad2024phiusiil}, and it explains the distance between our numbers and the 0.99-plus figures quoted
+for this file.
 
-\emph{Page evidence beats address evidence, and the mechanism is cost.} RQ2 is answered three times over, and the answers agree: the correlations, the forest's importances, and the
-shape of the tree. An attacker can shorten a URL, add a
-hyphen or buy HTTPS in minutes, and five of seventeen retained features describe the address while none ranks high.
-A credible reference count is harder, and so are a copyright line and a realistic volume of code, because
-those come out of a real publishing pipeline. Rao and Pais \cite{rao2019detection} argue the same, and
-Fette \emph{et al.} \cite{fette2007learning} found the analogous pattern in email. Our tree adds a caveat the
-literature does not stress: its first split counts external references, which an attacker can pad without changing
-what the page does, so the advantage is one of cost rather than a guarantee.
+Page evidence beats address evidence, and the mechanism is cost. RQ2 is answered three times over, and the answers
+agree: the correlations, the forest's importances, and the shape of the tree. An attacker can shorten a URL, add a
+hyphen, or buy HTTPS in minutes. Five of seventeen retained features describe the address, and none of them ranks
+high. A credible reference count is harder, and so are a copyright line and a realistic volume of code, because those
+come out of a real publishing pipeline. Rao and Pais \cite{rao2019detection} argue the same, and Fette \emph{et al.}
+\cite{fette2007learning} found the analogous pattern in email. Our tree adds a caveat the literature does not stress:
+its first split counts external references, which an attacker can pad without changing what the page does, so the
+advantage is one of cost rather than a guarantee.
 
-\emph{The clustering result is about the dataset, not about detection.} An ARI of 0.985 without labels is the most
+The clustering result is about the dataset, not about detection. An ARI of 0.985 without labels is the most
 surprising number here, and we do not read it as a detector. It says the two classes occupy two dense regions of this
 feature space, which is a property of how the corpus was built: two populations crawled from two kinds of source have
-different fingerprints. It says nothing about which region is dangerous, because a clusterer labels groups by size and position, not by meaning. The value
-is diagnostic, and that the mixture beats $k$-means fits the theory, since the classes are not spherical
-\cite{dempster1977maximum}.
+different fingerprints. It says nothing about which region is dangerous, because a clusterer labels groups by size
+and position rather than by meaning. The value is diagnostic, and the fact that the mixture beats $k$-means fits the
+theory, since the classes are not spherical \cite{dempster1977maximum}.
 
-\emph{Why the pictures lose.} The screenshot models lose about ten points, and the reason is information, not
-architecture: all four sit within 0.0212 while differing sevenfold in size, so the binding constraint is the input.
-Phishpedia avoids that limit by matching brand references \cite{lin2021phishpedia}, a different question:
-\emph{which} brand is imitated, rather than whether a page is honest. Our false alarms are legitimate pages consisting of one centred form, so late fusion is the obvious next step.
+The pictures lose about ten points, and the reason is information rather than architecture. All four networks sit
+within 0.0212 while differing sevenfold in size, so the binding constraint is the input. Phishpedia dodges that limit
+by matching brand references \cite{lin2021phishpedia}, which is a different question: \emph{which} brand is imitated,
+rather than whether a page is honest. Our false alarms are legitimate pages consisting of one centred form, so late
+fusion is the obvious next step.
 
-\emph{Score against explanation, and against cost.} On the picture side extra accuracy is cheap: MobileNetV3-Small
-uses 1.5 million parameters for 0.8750, EfficientNet-B0 four million for 0.8962. On the tabular side it runs the
-other way: the depth-three tree scores 0.9896 and the forest 0.9995, about 700 websites out of 70{,}611, and the
-tree explains every decision in three sentences. Latency ranges from 0.0002\,s to 0.4022\,s per 5{,}000 rows,
-against 26\,ms per image. Where a block must be justified we would ship the tree, keep the forest as a check, and add
-the screenshot model only where the tabular probability is uncertain. 
+Cost and explanation pull in opposite directions, and on the table they pull apart by very little. Extra accuracy is
+cheap on the picture side: MobileNetV3-Small uses 1.5 million parameters for 0.8750, EfficientNet-B0 four million for
+0.8962. It runs the other way on the table. The depth-three tree scores 0.9896 and the forest 0.9995, about 700
+websites out of 70{,}611, and the tree explains every decision in three sentences. Latency ranges from
+0.0002\,s to 0.4022\,s per 5{,}000 rows, against 26\,ms per image. Where a block must be justified we would ship the
+tree, keep the forest as a check, and add the screenshot model only where the tabular probability is uncertain.
 
-\emph{Limitations and future work.} The split is random, so test pages come from the same crawl as training pages; a
-time-based split would lower every score and is the right test of a detector \cite{marchal2014phishstorm}. We removed
-three leaky columns but cannot prove the family is gone, since \texttt{IsHTTPS} and the reference counts are also
-partly the crawler's output. We also fed ImageNet backbones un-normalised inputs with no augmentation, which is consistent with the three models landing within 0.0212 of each other. One run per model means the 0.0212 spread is a band, not a
-ranking. The corpus merges two capture conventions, as the source-stratified errors show. And one tabular corpus
-containing analyst logic cannot tell us whether the 17 features transfer. We would start with the normalisation and a
-temporal split, since that number says more about deployability than anything above. The errors point to late fusion
-next, then to a calibrated threshold chosen from a stated false-alarm budget. Testing the 17 features on a second
-corpus would come last.
+Limitations are four, and the first is the design. The split is random, so test pages come from the same crawl as
+training pages; a time-based split would lower every score, and it is the right test of a detector
+\cite{marchal2014phishstorm}. We removed three leaky columns but cannot prove the family is gone, since
+\texttt{IsHTTPS} and the reference counts are also partly the crawler's output. We fed ImageNet backbones
+un-normalised inputs with no augmentation, which is consistent with the three models landing within 0.0212 of each
+other. And one run per model means the 0.0212 spread is a band rather than a ranking. The corpus also merges two
+capture conventions, as the source-stratified errors show, and one tabular corpus containing analyst logic cannot tell
+us whether the 17 features transfer. We would start with the normalisation and a temporal split, since that number
+says more about deployability than anything above. The errors point to late fusion next, then to a calibrated
+threshold chosen from a stated false-alarm budget. Testing the 17 features on a second corpus would come last.
 
 % ---------------------------------------------------------------------
 \section{Conclusion}
@@ -539,12 +537,13 @@ corpus would come last.
 
 We set out to answer the question a browser vendor must answer before deploying a detector: whether the address a
 site sits on, or the way the page looks, is the better clue that it is fake. The answer is the page. A model reading
-page measurements separates the classes almost perfectly, a model reading screenshots does well but not nearly as
+page measurements separates the classes almost perfectly. A model reading screenshots does well but not nearly as
 well, and the gap between them is the value of the information a picture throws away.
 
-Two results matter beyond that ranking. A clusterer recovered the classes with no labels, which tells us the corpus
-is easier than the problem it represents: live traffic does not separate that neatly. And one family of columns had
-to be deleted before any model could be trusted, so a high score on a crawled corpus measures the corpus as much as the model. 
+Two results matter beyond that ranking. A clusterer recovered the classes with no labels at all, which tells us the
+corpus is easier than the problem it represents: live traffic does not separate that neatly. And one family of
+columns had to be deleted before any model could be trusted, so a high score on a crawled corpus measures the corpus
+as much as the model. Neither result would have come out of another leaderboard entry.
 
 % ---------------------------------------------------------------------
 \begin{thebibliography}{17}
