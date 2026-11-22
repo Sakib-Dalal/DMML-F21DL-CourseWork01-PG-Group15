@@ -47,6 +47,12 @@
 % Long unbreakable \texttt tokens in a narrow column otherwise force one word per line.
 \setlength{\emergencystretch}{3em}
 \hyphenpenalty=200
+
+% Section headings are set at 12 pt so that no text in the report falls below the brief's 11 pt floor.
+\usepackage{titlesec}
+\titleformat{\section}[block]{\normalfont\large\bfseries\centering}{\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.2ex plus .3ex minus .2ex}{0.5ex plus .1ex}
+
 \begin{document}
 
 % =====================================================================
@@ -55,8 +61,6 @@
 \begin{titlepage}
 \centering
 \vspace*{2.6cm}
-
-{\fontsize{11}{13.2}\selectfont F21DL Data Mining and Machine Learning --- Group Coursework, 2026--2027\par}
 
 \vspace{2.4cm}
 
@@ -301,8 +305,14 @@ occasional personal data, so the corpus stays out of version control and no live
 
 \emph{Protocol.} We split the tabular data 70/30 with stratification, fitted every transformer on training rows only,
 fixed the seed at 42 and touched the test rows once, so every supervised model saw the same 17 features and the same
-70{,}611 websites. For the images, 2{,}400 validation images chose the epoch and 2{,}400 test images were scored
-once.
+70{,}611 websites. For the images, 2{,}400 validation images chose the epoch and 2{,}400 test images were scored once.
+
+\emph{Metrics, and why these.} The tabular classes are 57/43, so accuracy alone would flatter a model leaning on
+the majority, and we report precision, recall and $F_1$ beside it for every model. Clustering is scored with the
+adjusted Rand index and normalised mutual information, because both compare discovered groups against labels the
+algorithm never saw and both correct for agreement by chance. For the images we add threshold-free ROC-AUC and the
+Matthews correlation coefficient, and we time every tabular model on 5{,}000 test rows, because a vendor's
+constraint is latency rather than accuracy.
 
 
 
@@ -311,8 +321,8 @@ Bayes is generative: it models class-conditional densities and applies Bayes' ru
 independence assumption fits badly here, where the flags are strongly correlated. The Gaussian mixture is
 generative but stronger, fitted by expectation-maximisation \cite{dempster1977maximum}, the algorithm the
 syllabus pairs with $k$-means. Everything else learns a boundary directly: logistic regression, $k$-nearest
-neighbours, the decision tree and forest, the MLP and the four networks. The generative arm answers RQ3; the rest
-answer RQ1, RQ2 and RQ4.
+neighbours, the decision tree and forest, the MLP and the four networks. Naive Bayes is also one of the six supervised classifiers in Table~\ref{tab:class}, so the generative family
+answers RQ1 as well as RQ3; the discriminative models answer RQ1, RQ2 and RQ4.
 
 \emph{Why these nine models.} The five classical models are the standard spread for a tabular problem and each
 fails differently: a linear boundary, a local vote, a strong independence assumption, a single axis-aligned tree
@@ -339,8 +349,7 @@ augmentation, in hindsight the weakest choice in the study.
 \emph{The transfer baseline.} ResNet-18, MobileNetV3-Small and EfficientNet-B0 were loaded with ImageNet weights,
 their final layer replaced by a two-way linear head, and fine-tuned end to end with no frozen blocks, for 8
 epochs with Adam at $5\times10^{-4}$ and the same batch size, weight decay, input size and split. Holding the
-recipe fixed is what lets us attribute Table~\ref{tab:img} to architecture. All image work ran on one NVIDIA
-A100-SXM4-80GB; the tabular work ran on CPU, the deployment condition we care about.
+recipe fixed is what lets us attribute Table~\ref{tab:img} to architecture. Image work ran on one NVIDIA A100-SXM4-80GB, tabular work on CPU.
 
 % ---------------------------------------------------------------------
 \section{Results}
@@ -350,7 +359,7 @@ A100-SXM4-80GB; the tabular work ran on CPU, the deployment condition we care ab
 held-out websites. All six clear 0.99; the weakest is Gaussian naive Bayes at 0.9944. The random forest leads the five
 at 0.9995 accuracy and 0.9996 $F_1$; the MLP is a fraction ahead at 0.9996 and 0.9997. Precision and recall move
 together in every row, so nobody buys accuracy by leaning on the majority: the largest gap between them is 0.0058,
-in naive Bayes. In counts the MLP is wrong 28 times and naive Bayes 396, with the other four between.
+in naive Bayes. 
 
 \begin{table}[!t]
 \centering
@@ -372,8 +381,8 @@ Gaussian NB     & 0.9944 & 0.9922 & 0.9980 & 0.9951 & 396 \\
 \end{tabular}
 \end{table}
 
-The size of the gap is the result, not the winner: between the best and the worst model lie 0.0052 accuracy, about
-368 websites, and a straight-line boundary lands within 0.0011 of 200 trees.
+The gap is the result, not the winner: 0.0052 accuracy separates best from worst, about 368 websites, and a
+straight line lands within 0.0011 of 200 trees.
 
 \emph{RQ2: which evidence ranks higher.} Address measurements appear in neither top four of either ranking. The tree
 in Fig.~\ref{fig:tree} makes the mechanism legible rather than inferential: its first split asks whether the page
@@ -458,9 +467,9 @@ and 0.8 carries most of the errors.
 
 \emph{Two further analyses.} Stratifying errors by source, the network got 182 of 1{,}850 Phishpedia images wrong
 (9.8~\%) and 76 of 550 Zenodo images wrong (13.8~\%), so part of the error is domain shift between two capture
-conventions. An interpretability pass showed early blocks responding to edges and text mass and later blocks to the
-layout of a form; of five misclassified samples, four were legitimate pages rejected with high confidence, all of
-them little more than a single centred form.
+conventions. An interpretability pass showed early blocks responding to edges and text mass and later blocks to the layout
+of a form, and four of the five misclassified samples we inspected were legitimate pages consisting of little more
+than a single centred form.
 
 The two views do not meet. The best tabular model is 0.1034 accuracy above the best screenshot model, at matched
 recall the table still wins, and the screenshot model's ROC-AUC of 0.9603 is below the tabular models' accuracy
@@ -701,13 +710,14 @@ Table~\ref{tab:contrib} records the allocation.
 Sakib Dalal & H00549861 &
 R1 and R3. Repository scaffolding and dataset management; the classical-model suite (model definitions,
 shared training loop, evaluation metrics); the decision-tree depth study, tree plotting and discussion; the
-MLP width search and final MLP; the RQ1 questions, hypotheses and the leakage analysis; the report (writing,
-figures, \LaTeX{}); integration and code review across branches. \\
+MLP width search and final MLP; the RQ1 questions, hypotheses and the leakage analysis; integration and code
+review across branches. \\
 \addlinespace
 Syed Umraaz & H00557679 &
 R1 and R2. Feature selection from the random-forest ranking (17 features); standardisation and the 70/30
 stratified split; the cluster-count sweep for $k=2\dots8$; $k$-means and Gaussian-mixture experiments; the
-contingency table of predicted groups against true labels. \\
+contingency table of predicted groups against true labels; preparation and editing of the report, including its
+structure, figures and final proofread. \\
 \addlinespace
 Arafa Mehar & H00561458 &
 R1 and R2. Dataset loading and cleaning, including label encoding of the top-level domain; the exploratory

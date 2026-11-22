@@ -66,7 +66,7 @@ The two screenshot sources give 91,740 raw images, 61,375 after cleaning.
 | IEEE template | `IEEEtran` journal class, IEEE numeric citations, `Fig. n` / `Table I` numbering |
 | Maximum 6 pages of body | Body runs pages 2–7; title page, references and appendices fall outside the limit |
 | A4, margins ≥ 1.27 cm | A4 throughout; measured margins are 1.43 cm (left/right), 1.92 cm (top), 1.51 cm (bottom) |
-| Minimum font size 11 pt | Body, abstract, captions, tables and references are all set at 11 pt |
+| Minimum font size 11 pt | Body, abstract, captions, tables and references at 11 pt; headings at 12 pt |
 | Required sections | Introduction, Related Work, Dataset Description and Analysis, Experimental Setup, Results, Discussion, Conclusion |
 | Contribution appendix | Appendix C, taken from the notebook header and the commit history |
 
