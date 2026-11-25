@@ -10,15 +10,44 @@ Datasets/phiusiil.zip
 Datasets/Phishing dataset/
 Datasets/combined_images/
 *.orig.bak
-Documents/Report/main.aux
-Documents/Report/main.log
-Documents/Report/main.out
-Documents/Report/build.log
-Documents/Report/main.pdf
 *.good.bak
 
+# ---------------------------------------------------------------------
+# LaTeX report sources and build artefacts.
+# Only Documents/Report/F21DL_PG_Group15_Report.pdf is published; the
+# sources that produce it stay local.
+# ---------------------------------------------------------------------
+Documents/Report/main.tex
+Documents/Report/build.sh
+Documents/Report/make_figures.py
+Documents/Report/figures/
 Documents/Report/main.tex.*.bak
-Documents/Report/.review/sec/
-Documents/Report/.review/web/
-Documents/Report/.review/.review/
-Documents/Report/.review/apply_trims*.py
+Documents/Report/*.bak
+
+# The whole review folder stays local: drafts, review rounds, measurements.
+Documents/Report/.review/
+
+# LaTeX build output, anywhere in the tree.
+*.aux
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.synctex(busy)
+*.bbl
+*.blg
+*.idx
+*.ilg
+*.ind
+*.nav
+*.snm
+*.vrb
+*.xdv
+
+# Every built PDF except the one that is meant to be public.
+Documents/Report/*.pdf
+!Documents/Report/F21DL_PG_Group15_Report.pdf

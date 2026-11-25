@@ -8,8 +8,11 @@ F21DL Data Mining and Machine Learning — Group Coursework, Group 15.
 |---|---|
 | `Notebook/DataMining&MachineLearning_Coursework_01.ipynb` | Steps 01–09: questions and hypotheses (R1), cleaning, graphs, feature selection, clustering, classical models, decision tree, neural networks, final comparison (R2–R4) |
 | `Notebook/Phishing_Image_CNN_Pipeline.ipynb` | The screenshot experiments (RQ4 / H4): acquisition, cleaning, four convolutional networks |
-| `Documents/Report/main.tex` | The report, IEEEtran journal class, A4 |
+| `Documents/Report/F21DL_PG_Group15_Report.pdf` | The finished report, IEEEtran journal class, A4 |
 | `Datasets/PhiUSIIL_Phishing_URL_Dataset.csv` | The tabular dataset, committed because it is 57 MB |
+
+The report sources (`main.tex`, `build.sh`, `make_figures.py`, `figures/`) are kept local and are
+not committed; only the built PDF is published.
 
 ## The datasets
 
@@ -58,8 +61,9 @@ The two screenshot sources give 91,740 raw images, 61,375 after cleaning.
 
 ## The report
 
-`Documents/Report/main.tex` builds `Documents/Report/F21DL_Group15_Report.pdf` with `./build.sh`
-(two `pdflatex` passes). The layout is chosen to meet the submission rules in the module brief:
+`Documents/Report/main.tex` builds `Documents/Report/F21DL_PG_Group15_Report.pdf` with `./build.sh`
+(two `pdflatex` passes). The sources are kept local rather than committed, so the PDF is the
+artefact to read. The layout is chosen to meet the submission rules in the module brief:
 
 | Requirement | How it is met |
 |---|---|
@@ -101,5 +105,5 @@ here; the report cites them where it relies on them.
 ## Notes on reuse
 
 - All three datasets are licensed for research reuse and all are attributed in the report.
-- The working report file is `Documents/Report/main.tex`; build it from that directory.
+- The report sources are local only; the committed artefact is `Documents/Report/F21DL_PG_Group15_Report.pdf`.
 - Backups made while updating the dataset references end in `.orig.bak`.
